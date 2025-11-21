@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>E‑Commerce Starter — HTML CSS & JS</title>
+  <style>
+    :root{
+      --bg:#fff8f6; --card:#ffffff; --text:#0b1220; --muted:#6b7280; --accent:#ff5722; --accent-2:#ff8a50;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .container{max-width:1100px;margin:28px auto;padding:0 20px}
+
+    header{display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;display:flex;align-items:center;justify-content:center;font-weight:800}
+    nav{display:flex;gap:12px;align-items:center}
+    nav input, nav select{padding:8px;border-radius:8px;border:1px solid #eee}
+    .cart-btn{background:var(--accent);color:white;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
+
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 20px rgba(99,102,241,0.06)}
+    .thumb{height:160px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;margin-bottom:10px}
+    .title{font-weight:800}
+    .price{font-weight:800;margin-top:8px}
+    .muted{color:var(--muted)}
+
+    /* cart drawer */
+    .cart-drawer{position:fixed;right:20px;top:70px;width:340px;max-height:80vh;background:var(--card);border-radius:12px;padding:12px;box-shadow:0 18px 60px rgba(2,6,23,0.2);transform:translateX(400%);transition:transform .28s ease}
+    .cart-drawer.open{transform:translateX(0)}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #f2f4f8}
+    .qty{display:flex;gap:6px;align-items:center}
+    .qty button{padding:6px 8px;border-radius:8px;border:1px solid #eee;background:transparent;cursor:pointer}
+
+    /* banners */
+    .hero{display:flex;gap:18px;align-items:center;margin-top:18px}
+    .hero .lead{flex:1}
+    .lead h1{margin:0}
+    .filters{display:flex;gap:8px;align-items:center}
+
+    /* responsive */
+    @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.cart-drawer{right:10px;width:90vw}}
+    @media (max-width:600px){.grid{grid-template-columns:1fr}nav{display:none}.hero{flex-direction:column;align-items:flex-start}}
+
+    footer{margin:36px 0;color:var(--muted);text-align:center}
+  .thumb-img { width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">EC</div>
+        <div>
+          <div style="font-weight:800">My Shop</div>
+          <div style="font-size:12px;color:var(--muted)">Simple e‑commerce starter</div>
+        </div>
+      </div>
+
+      <nav>
+        <input id="search" placeholder="Search products..." />
+        <select id="categoryFilter">
+          <option value="all">All categories</option>
+        </select>
+        <button class="cart-btn" id="openCart">Cart (<span id="cartCount">0</span>)</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="lead">
+          <h1>Shop trending products</h1>
+          <p class="muted">Browse, add to cart, and checkout — this starter shows product listing, cart, search, filters and local persistence.</p>
+        </div>
+        <div class="filters">
+          <label class="muted">Sort:</label>
+          <select id="sortBy">
+            <option value="default">Default</option>
+            <option value="price-asc">Price: low → high</option>
+            <option value="price-desc">Price: high → low</option>
+          </select>
+        </div>
+      </section>
+
+      <section id="products" class="grid" aria-live="polite">
+        <!-- products injected by JS -->
+      </section>
+
+    </main>
+
+    <aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Shopping Cart</strong>
+        <button id="closeCart" style="border:0;background:transparent;cursor:pointer">✕</button>
+      </div>
+      <div id="cartItems" style="margin-top:10px;overflow:auto;max-height:55vh"></div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="muted">Total</div>
+          <div style="font-weight:800" id="cartTotal">₹0.00</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="clearCart" style="padding:8px 10px;border-radius:8px;border:1px solid #eee;background:transparent">Clear</button>
+          <button id="checkout" style="padding:8px 14px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer">Checkout</button>
+        </div>
+      </div>
+    </aside>
+
+    <footer>
+      Demo store • No real payments • Data saved locally • © <span id="year"></span>
+    </footer>
+  </div>
+
+  <script>
+    // Sample product data
+    const PRODUCTS = [
+      {id:1,title:'Classic Sneakers',price:2499,category:'Footwear',color:'#ff7f50'},
+      {id:2,title:'Denim Jacket',price:2999,category:'Clothing',color:'#7ecbff'},
+      {id:3,title:'Wireless Headphones',price:3999,category:'Electronics',color:'#9b59b6'},
+      {id:4,title:'Leather Wallet',price:799,category:'Accessories',color:'#d35400'},
+      {id:5,title:'Sports Watch',price:1999,category:'Accessories',color:'#27ae60'},
+      {id:6,title:'Sunglasses',price:999,category:'Accessories',color:'#34495e'},
+      {id:7,title:'Running Shorts',price:799,category:'Clothing',color:'#f39c12'},
+      {id:8,title:'Bluetooth Speaker',price:1599,category:'Electronics',color:'#2ecc71'},
+      {id:9,title:'Formal Shoes',price:3499,category:'Footwear',color:'#0e9aa7'}
+    ];
+
+    // State
+    let state = {
+      products: PRODUCTS.slice(),
+      cart: JSON.parse(localStorage.getItem('ec_cart') || '{}'),
+      query: '',
+      category: 'all',
+      sort: 'default'
+    };
+
+    // DOM refs
+    const productsEl = document.getElementById('products');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const cartItemsEl = document.getElementById('cartItems');
+    const cartCountEl = document.getElementById('cartCount');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const cartDrawerOpenBtn = document.getElementById('openCart');
+    const closeCartBtn = document.getElementById('closeCart');
+    const searchInput = document.getElementById('search');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortBy = document.getElementById('sortBy');
+    const yearEl = document.getElementById('year');
+
+    yearEl.textContent = new Date().getFullYear();
+
+    // Populate category filter
+    const categories = ['all', ...Array.from(new Set(PRODUCTS.map(p=>p.category)))];
+    categories.forEach(cat => {
+      const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat;
+      categoryFilter.appendChild(opt);
+    });
+
+    // Helpers
+    function formatPrice(v){ return '₹' + (v/100).toFixed(2); }
+
+    function saveCart(){ localStorage.setItem('ec_cart', JSON.stringify(state.cart)); }
+
+    function renderProducts(){
+      let list = state.products.slice();
+      // filter
+      if(state.query) list = list.filter(p => p.title.toLowerCase().includes(state.query.toLowerCase()));
+      if(state.category !== 'all') list = list.filter(p => p.category === state.category);
+      // sort
+      if(state.sort === 'price-asc') list.sort((a,b)=>a.price-b.price);
+      if(state.sort === 'price-desc') list.sort((a,b)=>b.price-a.price);
+
+      productsEl.innerHTML = '';
+      list.forEach(p=>{
+        const card = document.createElement('article'); card.className = 'card';
+        card.innerHTML = `
+          <img src="https://via.placeholder.com/300" alt="Product Image" class="thumb-img">
+          <div class="title">${p.title}</div>
+          <div class="muted">${p.category}</div>
+          <div class="price">${formatPrice(p.price)}</div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button data-id="${p.id}" class="addBtn" style="flex:1;padding:8px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer">Add to cart</button>
+            <button data-id="${p.id}" class="buyBtn" style="padding:8px;border-radius:8px;border:1px solid #eee;background:transparent;cursor:pointer">Buy</button>
+          </div>
+        `;
+        productsEl.appendChild(card);
+      });
+    }
+
+    function renderCart(){
+      const items = Object.keys(state.cart).map(id => {
+        const product = PRODUCTS.find(p=>p.id==id);
+        return {product, qty: state.cart[id]};
+      });
+      cartItemsEl.innerHTML = '';
+      if(items.length===0){ cartItemsEl.innerHTML = '<div class="muted">Your cart is empty.</div>'; cartCountEl.textContent = 0; cartTotalEl.textContent = formatPrice(0); return; }
+      let total = 0;
+      items.forEach(it => {
+        const row = document.createElement('div'); row.className = 'cart-item';
+        total += it.product.price * it.qty;
+        row.innerHTML = `
+          <div style="width:48px;height:48px;border-radius:8px;background:${it.product.color};display:flex;align-items:center;justify-content:center;color:white;font-weight:800">${it.product.title.split(' ')[0]}</div>
+          <div style="flex:1">
+            <div style="font-weight:800">${it.product.title}</div>
+            <div class="muted">${formatPrice(it.product.price)} x ${it.qty}</div>
+          </div>
+          <div class="qty">
+            <button data-id="${it.product.id}" class="dec">−</button>
+            <div style="min-width:22px;text-align:center">${it.qty}</div>
+            <button data-id="${it.product.id}" class="inc">+</button>
+          </div>
+        `;
+        cartItemsEl.appendChild(row);
+      });
+      cartCountEl.textContent = items.reduce((s,i)=>s+i.qty,0);
+      cartTotalEl.textContent = formatPrice(total);
+    }
+
+    // Events
+    document.addEventListener('click', (e)=>{
+      if(e.target.matches('.addBtn')){
+        const id = e.target.dataset.id;
+        addToCart(id,1);
+      }
+      if(e.target.matches('.buyBtn')){
+        const id = e.target.dataset.id; addToCart(id,1); openCart();
+      }
+      if(e.target.matches('#openCart')) openCart();
+      if(e.target.matches('#closeCart')) closeCart();
+      if(e.target.matches('.inc')){ const id=e.target.dataset.id; addToCart(id,1); }
+      if(e.target.matches('.dec')){ const id=e.target.dataset.id; addToCart(id,-1); }
+      if(e.target.matches('#clearCart')){ state.cart = {}; saveCart(); renderCart(); }
+      if(e.target.matches('#checkout')){ if(Object.keys(state.cart).length===0){ alert('Cart is empty'); return; } alert('Checkout simulated — Thanks for your order!'); state.cart={}; saveCart(); renderCart(); closeCart(); }
+    });
+
+    function addToCart(id,delta){
+      const key = String(id);
+      state.cart[key] = (state.cart[key]||0) + delta;
+      if(state.cart[key] <= 0) delete state.cart[key];
+      saveCart(); renderCart();
+    }
+
+    function openCart(){ cartDrawer.classList.add('open'); cartDrawer.setAttribute('aria-hidden','false'); }
+    function closeCart(){ cartDrawer.classList.remove('open'); cartDrawer.setAttribute('aria-hidden','true'); }
+
+    // Search, filter, sort
+    searchInput.addEventListener('input', (e)=>{ state.query = e.target.value; renderProducts(); });
+    categoryFilter.addEventListener('change', (e)=>{ state.category = e.target.value; renderProducts(); });
+    sortBy.addEventListener('change', (e)=>{ state.sort = e.target.value; renderProducts(); });
+
+    // Initialize
+    renderProducts(); renderCart();
+
+    // Load cart from local storage into state (already done at top), make sure values are numbers
+    Object.keys(state.cart).forEach(k => state.cart[k] = Number(state.cart[k]));
+
+    // Accessibility: close cart on Escape
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeCart(); });
+  </script>
+</body>
+</html>
